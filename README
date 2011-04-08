@@ -1,0 +1,78 @@
+EtherShield packet dumping utility library
+
+A fairly simple library to dump the contents of a received ethernet packet as a debugging aid.
+
+
+Usage:
+
+// Include the header
+#include <EthPacketDump.h>
+
+// Instantiate packet dump
+EthPacketDump dump=EthPacketDump();
+
+// Setup function
+void setup(){
+  Serial.begin(19200);
+
+  // Start dump process by passing Serial object and flags
+  dump.begin( &Serial,false, false, false, true );
+  
+  // initialize enc28j60
+
+  // etc...
+}
+
+
+// In your loop function after receiving a packet, pass it on to be dumped
+    plen = es.ES_enc28j60PacketReceive(BUFFER_SIZE, buf);
+    dump.packetDump( buf, plen );
+    dat_p=es.ES_packetloop_icmp_tcp(buf,plen);
+
+
+Example output, just dumping packet details, i.e. IP headers
+
+IP Details
+Version: v4 Header Len: 20
+Total IP length: 233
+Src: 173.203.98.29 Dest: 192.168.1.25
+Protocol: 6 TCP
+SRC Port: 80 DST Port: 2866Seq: 94F91CDC Seq Ack: 003B1F
+Flags: 18 - PUSH ACK 
+TCP header Len: 20 TCP Win Size: 1A0 TCP Checksum: 52FD
+Payload Data len: 193
+Payload dump
+
+0000: 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0d   HTTP/1.1 200 OK.
+0010: 0a 44 61 74 65 3a 20 46 72 69 2c 20 30 38 20 41   .Date: Fri, 08 A
+0020: 70 72 20 32 30 31 31 20 32 30 3a 30 37 3a 32 30   pr 2011 20:07:20
+0030: 20 47 4d 54 0d 0a 43 6f 6e 74 65 6e 74 2d 54 79    GMT..Content-Ty
+0040: 70 65 3a 20 74 65 78 74 2f 70 6c 61 69 6e 3b 20   pe: text/plain; 
+0050: 63 68 61 72 73 65 74 3d 75 74 66 2d 38 0d 0a 43   charset=utf-8..C
+0060: 6f 6e 6e 65 63 74 69 6f 6e 3a 20 63 6c 6f 73 65   onnection: close
+0070: 0d 0a 43 61 63 68 65 2d 43 6f 6e 74 72 6f 6c 3a   ..Cache-Control:
+0080: 20 6d 61 78 2d 61 67 65 3d 30 0d 0a 43 6f 6e 74    max-age=0..Cont
+0090: 65 6e 74 2d 4c 65 6e 67 74 68 3a 20 31 0d 0a 41   ent-Length: 1..A
+00a0: 67 65 3a 20 30 0d 0a 56 61 72 79 3a 20 41 63 63   ge: 0..Vary: Acc
+00b0: 65 70 74 2d 45 6e 63 6f 64 69 6e 67 0d 0a 0d 0a   ept-Encoding....
+00c0: 20                                                 
+
+Other Options, these can be used in combinations to increase or decrease 
+amount of information generated, for example you may not want to see all the
+ARP and Ethernet headers when debugging IP problems.
+
+void EthPacketDump::begin( HardwareSerial *serIn,
+	boolean dumpPacketIn,		// Dump the packet in hex
+	boolean ethernetDumpIn,		// Display ethernet headers
+	boolean arpDumpIn,		// Dump ARP details
+	boolean packetDetailsIn ) {	// Display IP packet details
+
+use true to include and false to exclude the option
+
+Please note that this library has not been extensively tested, just knocked 
+up from existing debug code and can still be classed as a work in progress.
+
+
+Andrew Lindsay 08/04/2011
+
+
