@@ -38,5 +38,6 @@ class EthPacketDump {
 	void packetDump( uint8_t *buf, int plen );
 
 };
+
 #endif //_ETHPACKETDUMP_H
 

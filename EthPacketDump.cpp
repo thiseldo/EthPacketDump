@@ -4,8 +4,6 @@
  * Andrew Lindsay
  ***********************************************************************/
 
-// TODO: Move strings to flash
-
 #include "EthPacketDump.h"
 #include "net.h"
 #include <inttypes.h>
