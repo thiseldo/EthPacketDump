@@ -16,6 +16,7 @@ boolean ethernetDump = true;
 boolean arpDump = true;
 boolean packetDetails = true;
 
+int maxPacketSize = 0;
 int packetType = 0;
 int ipHeaderLen = 0;
 int ipLen = 0;
@@ -42,7 +43,7 @@ void EthPacketDump::println( const prog_char *progmem_s ) {
 
 // Begin method 
 void EthPacketDump::begin( HardwareSerial *serIn, boolean dumpPacketIn, boolean ethernetDumpIn,
-		boolean arpDumpIn, boolean packetDetailsIn ) {
+		boolean arpDumpIn, boolean packetDetailsIn, int packetBufSize  ) {
 	_Serial = serIn;
 	_Serial->begin(19200);
 	println( PSTR( "EthPacketDump" ));
@@ -50,13 +51,13 @@ void EthPacketDump::begin( HardwareSerial *serIn, boolean dumpPacketIn, boolean 
 	ethernetDump = ethernetDumpIn;
 	arpDump = arpDumpIn;
 	packetDetails = packetDetailsIn;
+	maxPacketSize = packetBufSize;
 }
 
 // Output a mac address from buffer from startByte
 void EthPacketDump::printMac( uint8_t *buf, int startByte ) {
   for( int i = 0; i < 6; i++ ) {
     sprintf(tmpNumStr, "%02x", buf[startByte + i] );
-    //_Serial->print( tmpNumStr );
     _Serial->print( tmpNumStr );
     if( i<5 )
       print( PSTR(":") );
@@ -84,24 +85,24 @@ void EthPacketDump::packetDump( uint8_t *buf, int plen ) {
   packetType = (buf[ETH_TYPE_H_P] << 8) + buf[ETH_TYPE_L_P];
 
   if( ethernetDump ) {
-    dumpEthernetHeader( buf, plen );
+    dumpEthernetHeader( buf );
   }   
 
   // ARP details
   if( packetType == 0x0806  && arpDump) {
-    dumpArp( buf, plen );
+    dumpArp( buf );
   }
 
   if( packetType == 0x800 && packetDetails ) { 
     //_Serial->println("\nIP Details");
     println( PSTR( "\nIP Details" ) );
-    dumpIpHeader( buf, plen );
+    dumpIpHeader( buf );
     ipHeaderLen = (buf[IP_HEADER_LEN_VER_P] & 0x0f) << 2;
     ipLen = (buf[IP_TOTLEN_H_P] << 8) + buf[IP_TOTLEN_L_P];
     proto = buf[IP_PROTO_P];
 
     if( proto == IP_PROTO_TCP_V ) {
-      dumpTcp( buf, plen );
+      dumpTcp( buf );
       // TCP headers
       unsigned int srcPort = (buf[TCP_SRC_PORT_H_P] << 8) + buf[TCP_SRC_PORT_L_P];
       print( PSTR("SRC Port: ") );
@@ -186,10 +187,10 @@ void EthPacketDump::packetDump( uint8_t *buf, int plen ) {
 		      break;
 	      case 67:		// DHCP Client
 	      case 68:		// DHCP Server
-		      dumpDhcp( buf, plen );
+		      dumpDhcp( buf );
 		      break;
 	      case 0x7b:	// NTP
-		      dumpNtp( buf, plen );
+		      dumpNtp( buf );
 		      break;
 
 	      default:
@@ -205,7 +206,7 @@ void EthPacketDump::dumpHexAscii( uint8_t *buf, int offset, int payloadLen ) {
 
   char asciiBuf[16];
   int asciiBufCount = 0;
-  for( int i = 0; i < payloadLen; i++ ) {
+  for( int i = 0; i < min(payloadLen,maxPacketSize); i++ ) {
     if( i % 16 == 0 ) {
       if( asciiBufCount > 0 ) {
         _Serial->print( "  " );
@@ -255,7 +256,7 @@ void EthPacketDump::dumpHex( uint8_t *buf, int plen ) {
 }
 
 
-void EthPacketDump::dumpEthernetHeader( uint8_t *buf, int plen ) {
+void EthPacketDump::dumpEthernetHeader( uint8_t *buf ) {
   // Display details of the packet in easy to read format
   // Ethernet headers - first 14 bytes
   println(PSTR( "Ethernet Header" ));
@@ -277,7 +278,7 @@ void EthPacketDump::dumpEthernetHeader( uint8_t *buf, int plen ) {
 }
 
 
-void EthPacketDump::dumpArp( uint8_t *buf, int plen ) {
+void EthPacketDump::dumpArp( uint8_t *buf ) {
   println(PSTR( "\nARP Details" ));
   print( PSTR( "ARP Operation: "));
   int oper = (buf[ETH_ARP_OPCODE_H_P] << 8) + buf[ETH_ARP_OPCODE_L_P];
@@ -305,7 +306,7 @@ void EthPacketDump::dumpArp( uint8_t *buf, int plen ) {
 }
 
 
-void EthPacketDump::dumpIpHeader( uint8_t *buf, int plen ) {
+void EthPacketDump::dumpIpHeader( uint8_t *buf ) {
   // IP headers
   int ipHeaderLen = (buf[IP_HEADER_LEN_VER_P] & 0x0f) << 2;
   int ipLen = (buf[IP_TOTLEN_H_P] << 8) + buf[IP_TOTLEN_L_P];
@@ -335,7 +336,7 @@ void EthPacketDump::dumpIpHeader( uint8_t *buf, int plen ) {
     _Serial->println();
 }
 
-void EthPacketDump::dumpTcp( uint8_t *buf, int plen ) {
+void EthPacketDump::dumpTcp( uint8_t *buf ) {
   // TCP headers
   unsigned int srcPort = (buf[TCP_SRC_PORT_H_P] << 8) + buf[TCP_SRC_PORT_L_P];
   unsigned int dstPort = (buf[TCP_DST_PORT_H_P] << 8) + buf[TCP_DST_PORT_L_P];
@@ -577,16 +578,7 @@ void EthPacketDump::dumpDns( uint8_t *buf, int plen ) {
 
 }
 
-void EthPacketDump::dumpDhcp( uint8_t *buf, int plen ) {
-/*
-    Server host name not given
-    Boot file name not given
-    Magic cookie: (OK)
-    Option: (t=53,l=1) DHCP Message Type = DHCP Discover
-        Option: (53) DHCP Message Type
-        Length: 1
-        Value: 01
- */
+void EthPacketDump::dumpDhcp( uint8_t *buf ) {
   int i=UDP_DATA_P;
   println(PSTR( "\nDHCP Details:"));
   print( PSTR( "Message type: ") );
@@ -658,7 +650,7 @@ void EthPacketDump::dumpDhcp( uint8_t *buf, int plen ) {
   _Serial->println();
 }
 
-void EthPacketDump::dumpNtp( uint8_t *buf, int plen ) {
+void EthPacketDump::dumpNtp( uint8_t *buf ) {
 
 }
 
