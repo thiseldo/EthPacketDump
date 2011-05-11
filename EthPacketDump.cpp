@@ -45,7 +45,8 @@ void EthPacketDump::println( const prog_char *progmem_s ) {
 void EthPacketDump::begin( HardwareSerial *serIn, boolean dumpPacketIn, boolean ethernetDumpIn,
 		boolean arpDumpIn, boolean packetDetailsIn, int packetBufSize  ) {
 	_Serial = serIn;
-	_Serial->begin(19200);
+	// Removed as set speed you want before passing Serial object ot begin 
+	//_Serial->begin(19200);
 	println( PSTR( "EthPacketDump" ));
 	dumpPacket = dumpPacketIn;
 	ethernetDump = ethernetDumpIn;
