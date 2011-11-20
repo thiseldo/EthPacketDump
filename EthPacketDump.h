@@ -7,7 +7,11 @@
 #define _ETHPACKETDUMP_LIB_H
 
 #include <inttypes.h>
+#if (ARDUINO >= 100)
+#include <Arduino.h>
+#else
 #include <wprogram.h>
+#endif
 #include <avr/pgmspace.h>
 
 /* Any #defines */

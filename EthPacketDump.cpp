@@ -7,7 +7,6 @@
 #include "EthPacketDump.h"
 #include "net.h"
 #include <inttypes.h>
-#include <wprogram.h>
 #include <avr/pgmspace.h>
 
 char tmpNumStr[8];
@@ -80,6 +79,7 @@ void EthPacketDump::packetDump( uint8_t *buf, int plen ) {
   if( plen == 0 ) 
     return;    // Nothing to dump
 
+  println(PSTR("====================") );
   if( dumpPacket ) {
     dumpHex( buf, plen );
   }
